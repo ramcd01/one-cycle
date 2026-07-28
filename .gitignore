@@ -16,3 +16,13 @@ outputs/
 
 Thumbs.db
 .DS_Store
+
+# Frontend
+frontend.zip
+frontend/node_modules/
+frontend/dist/
+
+# Pipeline generated outputs
+structure/output/
+chunking/output/
+embedding/output/

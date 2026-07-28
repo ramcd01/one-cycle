@@ -1,0 +1,10 @@
+{
+  "description": "Easily explore LH rental housing announcements and get instant AI responses to your questions, tailored for young applicants preparing for independence.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
