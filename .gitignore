@@ -1,28 +1,49 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
 
-venv/
+# Virtual environment
 .venv/
+venv/
+env/
 prj/
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
 .vscode/
 .idea/
 
+# Pipeline outputs
 outputs/
 
-.ipynb_checkpoints/
+# Embedding and model files
+*.npy
+*.npz
+*.pt
+*.pth
+*.bin
+*.safetensors
 
-Thumbs.db
-.DS_Store
+# Cache
+.cache/
+huggingface/
+models/
 
-# Frontend
-frontend.zip
-frontend/node_modules/
-frontend/dist/
+# Temporary files
+*.tmp
+*.log
 
-# Pipeline generated outputs
-structure/output/
-chunking/output/
-embedding/output/
+# Pipeline local outputs
+/chunking/output/
+/embedding/output/
+/structure/output/
+/outputs/
+
+# Local archives and backup files
+/frontend.zip
+*.bak
