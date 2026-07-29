@@ -264,12 +264,14 @@ prj\Scripts\activate
 
 ### 7.3 Python 패키지 설치
 
+가상 환경이 활성화된 상태에서 다음 명령을 실행합니다.
+
 ```bash
-pip install -r requirements.txt
-pip install torch sentence-transformers
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-현재 `requirements.txt`에는 Parser와 기존 프로젝트 패키지가 포함되어 있으며, Embedding 실행에 필요한 `torch`, `sentence-transformers`는 별도로 설치합니다.
+`requirements.txt`에는 Parsing부터 Embedding까지 현재 Pipeline 실행에 필요한 Python 라이브러리가 포함되어 있습니다.
 
 ### 7.4 Java 확인
 
