@@ -46,4 +46,6 @@ models/
 
 # Local archives and backup files
 /frontend.zip
+*.bak*.bak_v2
 *.bak
+*.bak_v2
