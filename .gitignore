@@ -1,0 +1,56 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Python virtual environments
+.venv/
+venv/
+env/
+prj/
+
+# Python test and analysis cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Generated outputs
+outputs/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# AI models and large generated files
+*.npy
+*.npz
+*.pt
+*.pth
+*.bin
+*.safetensors
+.cache/
+huggingface/
+models/
+
+# Local archives
+*.zip
