@@ -6,7 +6,7 @@ LH 공고문과 HWP/HWPX 문서를 기반으로 핵심 정보를 제공하고, �
 
 ```text
 one-cycle/
-├─ .github/                 # GitHub Actions 및 GitHub 설정
+├─ .github/                 # GitHub Actions 및 협업 설정
 ├─ backend/                 # FastAPI 백엔드
 ├─ frontend/                # 사용자·관리자 웹 화면
 ├─ crawler/                 # LH 공고 및 첨부파일 수집
@@ -17,18 +17,21 @@ one-cycle/
 ├─ chunking/                # 검색용 Chunk 생성
 ├─ embedding/               # 임베딩 생성
 ├─ rag/                     # 검색·Reranker·답변 생성
-├─ tests/                   # 백엔드·문서 처리·RAG 테스트
-├─ test_documents/          # 문서 처리 검증용 테스트 문서
+├─ config/                  # 문서 처리 및 RAG 공통 설정
+├─ scripts/                 # 실행·점검·관리용 스크립트
+├─ tests/                   # 프로젝트 테스트 코드
+├─ test_documents/          # 문서 처리 검증용 자료
+│  └─ announcement_001/     # 공고 단위 테스트 데이터
 ├─ infra/                   # Docker·DB·배포 환경
-├─ config/                  # 공통 설정
-├─ scripts/                 # 실행 및 관리 스크립트
+│  └─ postgres/
+│     └─ init/
 ├─ docs/                    # 프로젝트 문서
 ├─ .env.example             # 환경변수 예시
 ├─ .gitignore               # Git 제외 파일 설정
 ├─ CONTRIBUTING.md          # 협업 규칙
 ├─ README.md                # 프로젝트 안내
 ├─ requirements.txt         # Python 패키지 목록
-└─ run_pipeline.py          # 전체 문서 처리 흐름 실행 파일
+└─ run_pipeline.py          # 전체 문서 처리 파이프라인 실행 파일
 ```
 
 ## 브랜치 구조
@@ -46,58 +49,56 @@ main
 
 - `main`: 최종 제출 및 배포용 브랜치
 - `develop`: 전체 기능 통합용 브랜치
-- `feature/frontend`: 프론트엔드 개발
-- `feature/backend-infra`: 백엔드, 데이터베이스, Docker 및 배포 환경 개발
+- `feature/frontend`: 사용자·관리자 웹 화면 개발
+- `feature/backend-infra`: FastAPI, 데이터베이스, Docker 및 배포 환경 개발
 - `feature/document-processing`: 공고 수집, 문서 파싱, 정규화, 구조화 및 Chunking 개발
 - `feature/rag`: 임베딩, 검색, Reranker 및 답변 생성 개발
 
 ## 담당 영역
 
-### Frontend
-
 ```text
-frontend/
-docs/frontend/
+feature/frontend
+└─ frontend/
+
+feature/backend-infra
+├─ backend/
+└─ infra/
+
+feature/document-processing
+├─ crawler/
+├─ parser/
+├─ normalizer/
+├─ structure/
+├─ chunking/
+└─ test_documents/
+
+feature/rag
+├─ embedding/
+└─ rag/
 ```
 
-### Backend 및 Infra
+`config/`, `scripts/`, `tests/`, `docs/`는 여러 기능에서 사용할 수 있는 공통 경로입니다.
+
+## 테스트 문서 관리
+
+테스트 문서는 공고 단위로 구분합니다.
 
 ```text
-backend/
-infra/
-config/
-scripts/
-tests/backend/
-docs/backend/
-```
-
-### Document Processing
-
-```text
-crawler/
-parser/
-normalizer/
-structure/
-chunking/
 test_documents/
-tests/document_processing/
-docs/document_processing/
+├─ announcement_001/
+├─ announcement_002/
+└─ announcement_003/
 ```
 
-### RAG
+각 공고 폴더에는 해당 공고의 원문 문서와 문서 처리 검증에 필요한 자료를 함께 관리합니다.
 
-```text
-embedding/
-rag/
-tests/rag/
-docs/rag/
-```
+개인정보가 포함되거나 외부 공개가 제한된 문서는 GitHub에 업로드하지 않습니다.
 
 ## 환경변수 설정
 
 실제 환경변수 파일인 `.env`는 GitHub에 포함하지 않습니다.
 
-프로젝트를 처음 실행할 때 `.env.example`을 복사하여 `.env` 파일을 생성합니다.
+프로젝트를 처음 실행할 때 `.env.example`을 복사하여 `.env`를 생성합니다.
 
 ```cmd
 copy .env.example .env
@@ -109,7 +110,7 @@ copy .env.example .env
 
 - 실제 비밀번호가 포함된 `.env`는 GitHub에 업로드하지 않습니다.
 - 비밀번호와 API Key를 코드에 직접 작성하지 않습니다.
-- 개인정보나 외부 공개가 제한된 문서는 업로드하지 않습니다.
 - Python 가상환경과 `node_modules`는 업로드하지 않습니다.
 - 실행 결과물, 임베딩 파일, 모델 파일은 업로드하지 않습니다.
-- 공통 파일을 수정할 때는 팀원에게 먼저 공유합니다.
+- 개인정보나 외부 공개가 제한된 문서는 업로드하지 않습니다.
+- 공통 파일을 수정할 때는 팀원에게 변경 내용을 공유합니다.
