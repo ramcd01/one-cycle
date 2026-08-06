@@ -79,3 +79,7 @@ class Document(Base):
     announcement: Mapped["Announcement"] = relationship(
         back_populates="documents",
     )
+    processing_runs: Mapped[list["ProcessingRun"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
