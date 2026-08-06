@@ -141,3 +141,7 @@ class ProcessingRun(Base):
         back_populates="processing_run",
         cascade="all, delete-orphan",
     )
+    chunk_sets: Mapped[list["ChunkSet"]] = relationship(
+        back_populates="processing_run",
+        cascade="all, delete-orphan",
+    )
