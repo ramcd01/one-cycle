@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     app_environment: str = "local"
     debug: bool = True
 
+    postgres_host: str = "127.0.0.1"
+    postgres_port: int = 5432
+    postgres_db: str = "one_cycle"
+    postgres_user: str = "one_cycle"
+    postgres_password: str = "change_me"
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
