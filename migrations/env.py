@@ -1,14 +1,27 @@
 from logging.config import fileConfig
+from pathlib import Path
+import sys
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.engine import engine_from_config
 
-from backend.app.db.base import Base
-from backend.app.db.session import database_url
 
-import backend.app.models
+# 프로젝트의 backend 폴더를 Python 모듈 검색 경로에 추가한다.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_DIR = PROJECT_ROOT / "backend"
+
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+
+from app.db.base import Base
+from app.db.session import database_url
+
+# 모든 SQLAlchemy 모델을 import하여 Base.metadata에 등록한다.
+import app.models  # noqa: F401, E402
+
 
 config = context.config
 
@@ -16,7 +29,6 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 
-# Alembic이 SQLAlchemy 모델 구조를 확인할 때 사용한다.
 target_metadata = Base.metadata
 
 
