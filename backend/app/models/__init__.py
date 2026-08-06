@@ -6,6 +6,7 @@ from app.models.processing_artifact import ProcessingArtifact
 from app.models.chunk_set import ChunkSet
 from app.models.chunk import Chunk
 from app.models.embedding import Embedding
+from app.models.system_state import SystemState
 
 __all__ = [
     "CollectionRun",
@@ -16,4 +17,5 @@ __all__ = [
     "ChunkSet",
     "Chunk",
     "Embedding",
+    "SystemState",
 ]

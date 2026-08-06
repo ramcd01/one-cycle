@@ -3,13 +3,16 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,6 +38,21 @@ class ProcessingRun(Base):
             "AND verification_error_count >= 0 "
             "AND verification_warning_count >= 0",
             name="ck_processing_runs_counts_nonnegative",
+        ),
+        CheckConstraint(
+            "(NOT is_active) OR "
+            "("
+            "execution_status = 'succeeded' "
+            "AND verification_status = 'pass' "
+            "AND activated_at IS NOT NULL"
+            ")",
+            name="ck_processing_runs_active_requires_verified_success",
+        ),
+        Index(
+            "uq_processing_runs_one_active_per_document",
+            "document_id",
+            unique=True,
+            postgresql_where=text("is_active"),
         ),
     )
 
@@ -125,6 +143,16 @@ class ProcessingRun(Base):
         nullable=True,
     )
     finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=text("false"),
+    )
+    activated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
