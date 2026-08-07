@@ -117,28 +117,6 @@ class KeyInformation(Base):
     is_verified: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        default=dict,
-        server_default="{}",
-    )
-
-    contact_information: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=dict,
-        server_default="{}",
-    )
-
-    extraction_status: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-        default="pending",
-        server_default="pending",
-        index=True,
-    )
-
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
         default=False,
         server_default="false",
     )
