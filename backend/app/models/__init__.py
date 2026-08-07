@@ -7,6 +7,8 @@ from app.models.chunk_set import ChunkSet
 from app.models.chunk import Chunk
 from app.models.embedding import Embedding
 from app.models.system_state import SystemState
+from app.models.document_structure import DocumentStructure
+from app.models.key_information import KeyInformation
 
 __all__ = [
     "CollectionRun",
@@ -18,4 +20,6 @@ __all__ = [
     "Chunk",
     "Embedding",
     "SystemState",
+    "DocumentStructure",
+    "KeyInformation",
 ]
