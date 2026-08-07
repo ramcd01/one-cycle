@@ -54,3 +54,8 @@ huggingface/
 
 # Local archives
 *.zip
+# Local test documents
+
+test_documents/**/*
+!test_documents/**/
+!test_documents/**/.gitkeep
