@@ -9,6 +9,8 @@ from app.models.embedding import Embedding
 from app.models.system_state import SystemState
 from app.models.document_structure import DocumentStructure
 from app.models.key_information import KeyInformation
+from app.models.admin import Admin
+from app.models.error_log import ErrorLog
 
 __all__ = [
     "CollectionRun",
@@ -22,4 +24,6 @@ __all__ = [
     "SystemState",
     "DocumentStructure",
     "KeyInformation",
+    "Admin",
+    "ErrorLog",
 ]
