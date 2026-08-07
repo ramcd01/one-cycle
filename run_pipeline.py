@@ -33,7 +33,6 @@ STRUCTURE_STEP1_PATH = STRUCTURE_DIR / "build_document_step1.py"
 STRUCTURE_STEP2_PATH = STRUCTURE_DIR / "build_domain_step2.py"
 STRUCTURE_STEP3_PATH = STRUCTURE_DIR / "build_table_step3.py"
 CHUNKING_RUNNER_PATH = CHUNKING_DIR / "run_chunking.py"
-CHUNKING_BUILDER_PATH = CHUNKING_DIR / "build_chunks.py"
 EMBEDDING_RUNNER_PATH = EMBEDDING_DIR / "run_embeddings.py"
 
 HWP_JAR_PATH = BASE_DIR / "parser" / "libs" / "hwp" / "hwplib-1.1.10.jar"
@@ -197,7 +196,7 @@ def validate_project_files() -> bool:
         return False
 
     optional_files = {
-        "청킹": [CHUNKING_RUNNER_PATH, CHUNKING_BUILDER_PATH],
+        "청킹": [CHUNKING_RUNNER_PATH],
         "임베딩": [EMBEDDING_RUNNER_PATH],
     }
     for stage, paths in optional_files.items():
