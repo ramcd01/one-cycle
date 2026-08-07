@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from rag.reranker.models import RerankResult
+from typing import TYPE_CHECKING
 
 from .config import DEFAULT_GENERATION_CONFIG, GenerationConfig
+
+if TYPE_CHECKING:
+    from rag.reranker.models import RerankResult
 from .models import SourceContext
 
 
