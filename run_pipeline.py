@@ -438,6 +438,8 @@ def normalize_file(input_path: Path) -> bool:
             str(input_path),
             "--output",
             str(output_path),
+            "--announcement-id",
+            document_id,
         ]
     )
 
@@ -578,6 +580,8 @@ def chunk_file(input_path: Path) -> bool:
             str(input_path),
             "--output",
             str(output_path),
+            "--announcement-id",
+            document_id,
         ]
     )
 
