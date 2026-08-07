@@ -22,6 +22,7 @@ from app.models import (
     Document,
     DocumentStructure,
     ProcessingRun,
+    SystemState,
 )
 
 
@@ -197,15 +198,25 @@ def main() -> None:
             )
 
             if existing_run is not None:
-                print(
-                    "[중단] 이미 동일한 demo 데이터가 존재합니다."
-                )
-                print(
-                    f"collection_run_id: {existing_run.id}"
-                )
-                print(
-                    f"execution_id: {existing_run.execution_id}"
-                )
+                if existing_run.status != "success":
+                    raise RuntimeError(
+                        "기존 demo collection_run이 success 상태가 아닙니다. "
+                        f"현재 상태: {existing_run.status}"
+                    )
+
+                system_state = db.get(SystemState, 1)
+
+                if system_state is None:
+                    system_state = SystemState(id=1)
+                    db.add(system_state)
+                    db.flush()
+
+                system_state.active_collection_run_id = existing_run.id
+                db.commit()
+
+                print("[기존 demo 데이터 활성화 완료]")
+                print(f"collection_run_id: {existing_run.id}")
+                print(f"execution_id: {existing_run.execution_id}")
                 return
 
             collection_run = CollectionRun(
@@ -287,6 +298,15 @@ def main() -> None:
             )
 
             db.add(document_structure)
+
+            system_state = db.get(SystemState, 1)
+
+            if system_state is None:
+                system_state = SystemState(id=1)
+                db.add(system_state)
+                db.flush()
+
+            system_state.active_collection_run_id = collection_run.id
 
             db.commit()
 
