@@ -26,7 +26,7 @@
 | 구성 | 기준 |
 | --- | --- |
 | 작업 저장소 | `/home/ubuntu/ddokbot/one-cycle-integration` |
-| Python 환경 | `/home/ubuntu/ddokbot/venvs/one-cycle` |
+| Python 환경 | `/home/ubuntu/ddokbot/venvs/one-cycle-backend` |
 | PostgreSQL | `127.0.0.1:5432` |
 | 서비스 DB | `one_cycle` |
 | DB 컨테이너 | `one-cycle-postgres` |
@@ -79,13 +79,13 @@ git worktree add \
 현재 통합 검증에 사용한 Python 환경:
 
 ```text
-/home/ubuntu/ddokbot/venvs/one-cycle
+/home/ubuntu/ddokbot/venvs/one-cycle-backend
 ```
 
 확인:
 
 ```bash
-/home/ubuntu/ddokbot/venvs/one-cycle/bin/python --version
+/home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python --version
 ```
 
 이 환경은 현재 RAG/LLM 통합 검증에 사용 중이므로 임의로 삭제하거나 새로 덮어쓰지 않는다.
@@ -267,10 +267,12 @@ source .env
 set +a
 ```
 
-실행:
+교체 실행 시 사용할 기준 명령:
+
+> 현재 18000번 FastAPI 프로세스가 실행 중이면 임의로 재시작하지 않는다.
 
 ```bash
-/home/ubuntu/ddokbot/venvs/one-cycle/bin/python \
+/home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python \
   -m uvicorn backend.app.main:app \
   --host 127.0.0.1 \
   --port 18000
@@ -323,7 +325,7 @@ cd /home/ubuntu/ddokbot/one-cycle-integration/frontend/admin
 실행:
 
 ```bash
-/home/ubuntu/ddokbot/venvs/one-cycle/bin/python \
+/home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python \
   serve_admin.py \
   --host 127.0.0.1 \
   --port 5500 \
@@ -516,7 +518,7 @@ frontend/user/src/components/screens/DetailScreen.tsx
 ```text
 one-cycle-postgres
 one-cycle-postgres-data
-/home/ubuntu/ddokbot/venvs/one-cycle
+/home/ubuntu/ddokbot/venvs/one-cycle-backend
 /home/ubuntu/tools/llama.cpp
 /home/ubuntu/ddokbot/models/llm/
 ```
@@ -533,3 +535,76 @@ AWS 접속정보
 ```
 
 공유 브랜치는 현재 검증된 AWS MVP 통합 상태를 보존하기 위한 브랜치이며, 기존 개발 브랜치를 강제로 덮어쓰기 위한 브랜치가 아니다.
+
+---
+
+## 17. Document Pipeline 전체 실행 및 DB 반영
+
+Document Pipeline과 DB Persistence 직접 검증에는 다음 Python 환경을 사용한다.
+
+    /home/ubuntu/ddokbot/venvs/one-cycle-backend
+
+의존성 확인:
+
+    /home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python -m pip check
+
+Full Pipeline 실행:
+
+    cd /home/ubuntu/ddokbot/one-cycle-integration
+    PYTHONPATH=backend \
+    /home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python \
+      run_pipeline.py --stage full
+
+정상 종료 후 다음 명령으로 exit code를 확인한다.
+
+    echo $?
+
+정상 기준은 `0`이다.
+
+현재 Pipeline 순서:
+
+Parser → Normalizer → Structure → Chunking → 대표 문서 선택 → BGE-M3 Embedding → DB Persistence → ProcessingRun 활성화
+
+대표 문서 규칙:
+
+- HWPX가 있으면 HWPX를 사용한다.
+- HWPX가 없고 HWP만 있으면 HWP를 사용한다.
+
+현재 서비스 DB에는 `announcement_001`만 Announcement/Document로 등록되어 있다.
+따라서 001~004의 Pipeline/Embedding은 수행되지만 DB Persistence 대상은 현재 `announcement_001`이다.
+
+DB Persistence 안전 규칙:
+
+- 새 ProcessingRun은 inactive 상태로 먼저 저장한다.
+- Structure / Chunk / Embedding 전체 검증 후에만 활성화한다.
+- 새 결과가 실패하면 기존 active ProcessingRun을 유지한다.
+- DB 등록 Persistence 대상이 0건이면 Full Pipeline을 실패 처리한다.
+
+현재 검증 기준:
+
+- ProcessingRun: 4
+- ChunkSet: 4
+- Chunks: 291
+- Embeddings: 291
+- execution_status: succeeded
+- verification_status: pass
+- ProcessingRun active: true
+
+DB-first RAG API 확인:
+
+    curl -sS \
+      -X POST \
+      http://127.0.0.1:18000/api/chat \
+      -H "Content-Type: application/json" \
+      -d '{"announcementId":1,"question":"신청 자격은 어떻게 되나요?"}'
+
+정상 응답 기준:
+
+- answer 존재
+- grounded=true
+- evidence 1건 이상
+
+주의:
+
+현재 `127.0.0.1:18000`에 기존 FastAPI 프로세스가 실행 중이면 임의로 종료하거나 다시 띄우지 않는다.
+새 FastAPI 프로세스로 교체하기 전에는 별도 검증 절차를 거친다.

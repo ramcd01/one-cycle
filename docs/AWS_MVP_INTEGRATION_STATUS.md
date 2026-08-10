@@ -26,7 +26,9 @@ AWS 공용 환경에서 PostgreSQL/pgvector, FastAPI, RAG, 사용자 Frontend, �
   set -a
   source .env
   set +a
-  /home/ubuntu/ddokbot/venvs/one-cycle/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 18000
+  /home/ubuntu/ddokbot/venvs/one-cycle-backend/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 18000
+
+주의: 위 명령은 향후 `one-cycle-backend` 환경으로 FastAPI를 교체 실행할 때의 기준 명령이다. 이번 최종 `/api/chat` HTTP 검증은 기존 127.0.0.1:18000 프로세스를 재시작하지 않고 수행했다.
 
 ### Frontend
 - 사용자 Vite: 127.0.0.1:5173
@@ -212,3 +214,120 @@ DB/API 데이터를 사용자 Frontend에 정확하게 연결하는 작업이 �
 - `.env.example`
 
 Runbook에는 `.env` 준비, PostgreSQL, llama.cpp, FastAPI, 사용자/관리자 Frontend, SSH Tunnel, API 및 브라우저 검증 절차가 정리되어 있다.
+
+---
+
+## 9. Document Pipeline → DB Persistence 통합 검증
+
+### 작업 목적
+
+기존 Document Pipeline의 최종 산출물을 PostgreSQL 서비스 DB에 저장하고,
+DB-first RAG가 활성 처리 결과를 직접 조회하도록 연결했다.
+
+최종 검증 흐름:
+
+HWP/HWPX → Parser → Normalizer → Structure → Chunking
+→ 대표 문서 선택 → BGE-M3 Embedding → PostgreSQL Persistence
+→ ProcessingRun 활성화 → pgvector 검색 → llama.cpp → FastAPI /api/chat
+
+### 대표 문서 선택 규칙
+
+- HWPX가 존재하면 HWPX를 대표 문서로 사용한다.
+- HWPX가 없고 HWP만 존재하면 HWP를 사용한다.
+
+실제 Full Pipeline 처리 결과:
+
+- announcement_001: HWPX, 291 chunks
+- announcement_002: HWPX, 1246 chunks
+- announcement_003: HWPX, 149 chunks
+- announcement_004: HWP, 150 chunks
+- 전체 Embedding 생성: 1,836개
+
+### DB Persistence
+
+추가 파일: `backend/app/services/pipeline_persistence.py`
+
+주요 처리:
+
+- canonical outputs 검증
+- DB에 등록된 Announcement/Document와 대표 문서 일치 확인
+- Structure verification=pass 확인
+- Chunk ID 및 개수 검증
+- BGE-M3 1024차원 Embedding 검증
+- L2 normalization 검증
+- ProcessingRun / DocumentStructure / ChunkSet 생성
+- Chunk / Embedding 저장
+- 전체 검증 성공 후 새 ProcessingRun 활성화
+
+새 ProcessingRun과 ChunkSet은 먼저 inactive 상태로 저장한다.
+모든 데이터 검증이 성공한 후에만 새 결과를 active로 전환한다.
+따라서 새 처리 결과가 실패하면 기존 정상 active Run은 유지된다.
+
+### Full Pipeline 실패 처리
+
+`run_pipeline.py`의 Parser, Normalizer, Structure, Chunking, Embedding,
+DB Persistence 단계가 성공/실패 값을 반환하도록 수정했다.
+
+중간 단계가 실패하면 이후 단계를 실행하지 않는다.
+DB Persistence 대상 공고가 0건인 경우에도 성공으로 처리하지 않는다.
+
+### 실제 DB 검증 결과
+
+- 서비스 DB 등록 대상: announcement_001
+- ProcessingRun ID: 4
+- ChunkSet ID: 4
+- execution_status: succeeded
+- verification_status: pass
+- ProcessingRun active: true
+- chunks: 291
+- embeddings: 291
+- 기존 active Run 2는 비활성화됨
+
+announcement_002~004는 Document Pipeline과 Embedding까지 성공했지만
+현재 서비스 DB에 Announcement/Document가 등록되어 있지 않아 Persistence 대상에서는 제외된다.
+
+### DB-first Retrieval / RAG 검증
+
+질문 `신청 자격은 어떻게 되나요?`에 대해 pgvector Top-1 결과가
+`신청자격` 청크로 검색되었으며 similarity는 약 0.6146이었다.
+
+DB-first RAG에서 BGE-M3 Query Embedding → pgvector Top-K → llama.cpp
+답변 생성까지 정상 동작했다.
+
+FastAPI 최종 검증:
+
+- GET /docs: HTTP 200
+- POST /api/chat: 정상 응답
+- grounded: true
+- evidence 반환 확인
+
+따라서 문서 입력부터 FastAPI JSON 응답까지 백엔드 E2E가 확인되었다.
+
+### Pipeline / DB-first RAG 직접 검증 환경
+
+- Python venv: `/home/ubuntu/ddokbot/venvs/one-cycle-backend`
+- GPU: NVIDIA L4
+- Embedding: BAAI/bge-m3
+- Embedding dimension: 1024
+- CUDA 사용: true
+
+- Full Pipeline, Embedding, DB Persistence, pgvector Retrieval, DBRAGPipeline 직접 검증은 위 `one-cycle-backend` 환경에서 수행했다.
+- FastAPI `/api/chat` 최종 HTTP 검증은 기존 `127.0.0.1:18000`에서 실행 중이던 프로세스를 대상으로 수행했다.
+- 기존 FastAPI 프로세스는 legacy `one-cycle` 환경에서 시작된 프로세스이므로, 교체 환경 검증 전에는 임의로 종료하거나 재시작하지 않는다.
+
+주요 검증 패키지:
+
+- FlagEmbedding==1.4.0
+- numpy==2.5.1
+- transformers==4.57.1
+- tokenizers==0.22.2
+- huggingface-hub==0.36.2
+- accelerate==1.14.0
+- safetensors==0.8.0
+- tqdm==4.70.0
+- sentencepiece==0.2.2
+- torch==2.13.0
+- cuda-toolkit==13.0.3.0
+- triton==3.7.1
+
+`pip check`와 `pip install --dry-run -r requirements.txt` 검증을 통과했다.
