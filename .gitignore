@@ -60,3 +60,8 @@ huggingface/
 test_documents/**/*
 !test_documents/**/
 !test_documents/**/.gitkeep
+
+# Frontend dependencies and build cache
+**/node_modules/
+**/.vite/
+frontend/**/dist/
