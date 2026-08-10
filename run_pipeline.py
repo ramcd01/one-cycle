@@ -290,8 +290,10 @@ def parse_hwpx_file(file_path: Path, document_id: str) -> bool:
     )
 
 
-def run_parser_for_format(document_format: str) -> None:
+
+def run_parser_for_format(document_format: str) -> bool:
     groups = group_test_documents()
+
     targets = [
         (document_id, file_path)
         for document_id, data in groups.items()
@@ -300,8 +302,11 @@ def run_parser_for_format(document_format: str) -> None:
 
     if not targets:
         print()
-        print(f"[안내] 분석할 {document_format.upper()} 파일이 없습니다.")
-        return
+        print(
+            f"[안내] 분석할 "
+            f"{document_format.upper()} 파일이 없습니다."
+        )
+        return True
 
     print()
     print("=" * 70)
@@ -314,9 +319,15 @@ def run_parser_for_format(document_format: str) -> None:
 
     for document_id, file_path in targets:
         if document_format == "hwp":
-            result = parse_hwp_file(file_path, document_id)
+            result = parse_hwp_file(
+                file_path,
+                document_id,
+            )
         else:
-            result = parse_hwpx_file(file_path, document_id)
+            result = parse_hwpx_file(
+                file_path,
+                document_id,
+            )
 
         if result:
             success += 1
@@ -329,19 +340,22 @@ def run_parser_for_format(document_format: str) -> None:
         f"- 성공: {success}, 실패: {fail}"
     )
 
-
-def run_hwp_parser() -> None:
-    run_parser_for_format("hwp")
+    return fail == 0
 
 
-def run_hwpx_parser() -> None:
-    run_parser_for_format("hwpx")
+def run_hwp_parser() -> bool:
+    return run_parser_for_format("hwp")
 
 
-def run_all_parsers() -> None:
-    run_hwp_parser()
-    run_hwpx_parser()
+def run_hwpx_parser() -> bool:
+    return run_parser_for_format("hwpx")
 
+
+def run_all_parsers() -> bool:
+    hwp_ok = run_hwp_parser()
+    hwpx_ok = run_hwpx_parser()
+
+    return hwp_ok and hwpx_ok
 
 def run_compare() -> None:
     if not COMPARE_PARSER_PATH.exists():
@@ -442,17 +456,18 @@ def normalize_file(input_path: Path) -> bool:
     )
 
 
+
 def run_all_items(
     *,
     title: str,
     files: list[Path],
     processor,
     empty_message: str,
-) -> None:
+) -> bool:
     if not files:
         print()
         print(empty_message)
-        return
+        return False
 
     print()
     print("=" * 70)
@@ -476,15 +491,19 @@ def run_all_items(
     print(f"실패: {fail}")
     print("=" * 70)
 
+    return fail == 0
 
-def normalize_all() -> None:
-    run_all_items(
+
+def normalize_all() -> bool:
+    return run_all_items(
         title="전체 JSON 정규화",
         files=find_raw_json_files(),
         processor=normalize_file,
-        empty_message="[안내] 정규화할 Parser JSON이 없습니다. 먼저 Parser를 실행하세요.",
+        empty_message=(
+            "[안내] 정규화할 Parser JSON이 없습니다. "
+            "먼저 Parser를 실행하세요."
+        ),
     )
-
 
 def find_normalized_json_files() -> list[Path]:
     return find_stage_files(stage_name="normalized", filename="")
@@ -521,14 +540,17 @@ def structure_file(input_path: Path) -> bool:
     )
 
 
-def structure_all() -> None:
-    run_all_items(
+
+def structure_all() -> bool:
+    return run_all_items(
         title="전체 JSON 구조화",
         files=find_normalized_json_files(),
         processor=structure_file,
-        empty_message="[안내] 구조화할 정규화 JSON이 없습니다. 먼저 정규화를 실행하세요.",
+        empty_message=(
+            "[안내] 구조화할 정규화 JSON이 없습니다. "
+            "먼저 정규화를 실행하세요."
+        ),
     )
-
 
 def find_structured_json_files() -> list[Path]:
     """청킹에 사용할 Structure 최종 결과를 찾습니다.
@@ -584,19 +606,25 @@ def chunk_file(input_path: Path) -> bool:
     )
 
 
-def chunk_all() -> None:
+
+def chunk_all() -> bool:
     if not CHUNKING_RUNNER_PATH.exists():
         print()
-        print("[안내] chunking/run_chunking.py가 없어 청킹 단계를 건너뜁니다.")
-        return
+        print(
+            "[ERROR] chunking/run_chunking.py가 없어 "
+            "청킹 단계를 실행할 수 없습니다."
+        )
+        return False
 
-    run_all_items(
+    return run_all_items(
         title="전체 JSON 청킹",
         files=find_structured_json_files(),
         processor=chunk_file,
-        empty_message="[안내] 청킹할 최종 구조화 JSON이 없습니다. 먼저 구조화를 실행하세요.",
+        empty_message=(
+            "[안내] 청킹할 최종 구조화 JSON이 없습니다. "
+            "먼저 구조화를 실행하세요."
+        ),
     )
-
 
 def embedding_result_exists(
     document_id: str,
@@ -616,12 +644,11 @@ def find_chunk_json_files() -> list[Path]:
     공고별 대표 Chunk JSON 하나만 선택합니다.
 
     우선순위:
-    1. 이미 임베딩 결과가 있는 형식
-    2. HWPX
-    3. HWP
+    1. HWPX
+    2. HWP
 
     Parser/Normalizer/Structure/Chunk 결과는 형식별로 모두 보존하지만,
-    실제 검색용 임베딩은 공고당 하나만 생성합니다.
+    실제 검색용 임베딩은 공고당 대표 형식 하나만 생성합니다.
     """
 
     selected_files: list[Path] = []
@@ -629,46 +656,51 @@ def find_chunk_json_files() -> list[Path]:
 
     for document_id, data in groups.items():
         paths = ensure_document_output_paths(document_id)
-        available: list[tuple[str, Path]] = []
-
-        for document_format in ("hwpx", "hwp"):
-            if not data[document_format]:
-                continue
-
-            chunk_path = paths.chunks / document_format / "chunks.json"
-            if chunk_path.exists():
-                available.append((document_format, chunk_path))
-
-        if not available:
-            continue
 
         selected_path: Path | None = None
 
-        for document_format, chunk_path in available:
-            if embedding_result_exists(document_id, document_format):
-                selected_path = chunk_path
-                break
+        if data["hwpx"]:
+            hwpx_path = (
+                paths.chunks
+                / "hwpx"
+                / "chunks.json"
+            )
+            if hwpx_path.exists():
+                selected_path = hwpx_path
 
-        if selected_path is None:
-            selected_path = available[0][1]
+        elif data["hwp"]:
+            hwp_path = (
+                paths.chunks
+                / "hwp"
+                / "chunks.json"
+            )
+            if hwp_path.exists():
+                selected_path = hwp_path
 
-        selected_files.append(selected_path)
+        if selected_path is not None:
+            selected_files.append(selected_path)
 
     return sorted(selected_files)
 
 
-def embed_all() -> None:
+def embed_all() -> bool:
     if not EMBEDDING_RUNNER_PATH.exists():
         print()
-        print("[안내] embedding/run_embeddings.py가 없어 임베딩 단계를 건너뜁니다.")
-        return
+        print(
+            "[ERROR] embedding/run_embeddings.py가 없어 "
+            "임베딩 단계를 실행할 수 없습니다."
+        )
+        return False
 
     files = find_chunk_json_files()
 
     if not files:
         print()
-        print("[안내] 임베딩할 chunks.json이 없습니다. 먼저 청킹을 실행하세요.")
-        return
+        print(
+            "[안내] 임베딩할 chunks.json이 없습니다. "
+            "먼저 청킹을 실행하세요."
+        )
+        return False
 
     print()
     print("=" * 70)
@@ -676,46 +708,143 @@ def embed_all() -> None:
     print("=" * 70)
     print(f"대상: {len(files)}개")
 
-    for path in files:
-        print(f"- {path}")
+    for file_path in files:
+        print(f"- {file_path}")
 
     command = [
         sys.executable,
         str(EMBEDDING_RUNNER_PATH),
         "--inputs",
-        *[str(path) for path in files],
+        *[str(file_path) for file_path in files],
     ]
 
-    if run_command(command):
-        print()
-        print("=" * 70)
+    result = run_command(command)
+
+    print()
+    print("=" * 70)
+
+    if result:
         print("전체 Embedding 완료")
-        print("=" * 70)
     else:
+        print("[ERROR] Embedding Pipeline 실패")
+
+    print("=" * 70)
+
+    return result
+
+
+
+
+def persist_pipeline_outputs() -> bool:
+    backend_dir = BASE_DIR / "backend"
+
+    if str(backend_dir) not in sys.path:
+        sys.path.insert(0, str(backend_dir))
+
+    try:
+        from app.services.pipeline_persistence import (
+            persist_registered_outputs,
+        )
+
+        announcement_keys = (
+            group_test_documents().keys()
+        )
+
+        result = persist_registered_outputs(
+            announcement_keys
+        )
+
+    except Exception as error:
         print()
         print("=" * 70)
-        print("[ERROR] Embedding Pipeline 실패")
+        print("[ERROR] DB Persistence 실패")
+        print(error)
         print("=" * 70)
+        return False
+
+    print()
+    print("=" * 70)
+    print("DB Persistence 완료")
+    print("=" * 70)
+
+    print(
+        "DB 등록 공고:",
+        result["registered_keys"],
+    )
+    print(
+        "Persistence 대상:",
+        result["targets"],
+    )
+
+    for item in result["results"]:
+        print()
+        print(
+            f"- {item['announcement_key']}"
+        )
+        print(
+            "  processing_run_id:",
+            item["processing_run_id"],
+        )
+        print(
+            "  chunk_set_id:",
+            item["chunk_set_id"],
+        )
+        print(
+            "  chunks:",
+            item["chunks"],
+        )
+        print(
+            "  embeddings:",
+            item["embeddings"],
+        )
+        print(
+            "  deactivated_runs:",
+            item["deactivated_runs"],
+        )
+
+    return True
 
 
-def run_full_pipeline() -> None:
+def run_full_pipeline() -> bool:
     print()
     print("=" * 70)
     print("전체 Document Pipeline 시작")
     print("=" * 70)
 
-    run_all_parsers()
+    if not run_all_parsers():
+        print("[ERROR] Parser 단계 실패 - Pipeline 중단")
+        return False
+
+    # HWP/HWPX 비교는 검증용 보조 단계이므로
+    # 이후 처리의 필수 입력은 아닙니다.
     run_compare()
-    normalize_all()
-    structure_all()
-    chunk_all()
-    embed_all()
+
+    if not normalize_all():
+        print("[ERROR] Normalizer 단계 실패 - Pipeline 중단")
+        return False
+
+    if not structure_all():
+        print("[ERROR] Structure 단계 실패 - Pipeline 중단")
+        return False
+
+    if not chunk_all():
+        print("[ERROR] Chunking 단계 실패 - Pipeline 중단")
+        return False
+
+    if not embed_all():
+        print("[ERROR] Embedding 단계 실패 - Pipeline 중단")
+        return False
+
+    if not persist_pipeline_outputs():
+        print("[ERROR] DB Persistence 실패 - Pipeline 중단")
+        return False
 
     print()
     print("=" * 70)
     print("전체 Document Pipeline 완료")
     print("=" * 70)
 
+    return True
 
 def print_menu() -> None:
     print()
@@ -773,7 +902,11 @@ def main() -> None:
     }
 
     if args.stage != "menu":
-        actions[args.stage]()
+        result = actions[args.stage]()
+
+        if result is False:
+            raise SystemExit(1)
+
         return
 
     print_document_summary()

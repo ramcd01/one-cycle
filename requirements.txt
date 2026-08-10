@@ -1,3 +1,4 @@
+# Backend / API
 fastapi==0.141.1
 pydantic-settings==2.14.2
 uvicorn==0.51.0
@@ -5,11 +6,25 @@ sqlalchemy==2.0.51
 psycopg[binary]==3.3.4
 alembic==1.19.0
 pgvector==0.5.0
+
+# HWP/HWPX parsing
 JPype1==1.7.1
+
+# RAG / Embedding
 FlagEmbedding==1.4.0
-numpy
+numpy==2.5.1
 transformers==4.57.1
-accelerate
-safetensors
-tqdm
-sentencepiece
+tokenizers==0.22.2
+huggingface-hub==0.36.2
+accelerate==1.14.0
+safetensors==0.8.0
+tqdm==4.70.0
+sentencepiece==0.2.2
+torch==2.13.0
+cuda-toolkit==13.0.3.0
+triton==3.7.1
+
+# Notes
+# - Frontend dependencies are managed by frontend/*/package.json.
+# - llama.cpp is installed/built separately.
+# - The versions above match the validated AWS MVP environment.
