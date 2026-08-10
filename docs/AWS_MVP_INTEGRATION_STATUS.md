@@ -201,3 +201,14 @@ Vite에서도 기존 하드코딩 값이 그대로 남아 있음을 확인했다
 
 현재 단계에서는 새로운 RAG 기능이나 검색 품질 개선보다
 DB/API 데이터를 사용자 Frontend에 정확하게 연결하는 작업이 우선이다.
+
+---
+
+## 실행 및 환경 재현 가이드
+
+팀원이 현재 AWS MVP 통합 환경을 동일하게 실행하거나 재현하려면 다음 문서를 참고한다.
+
+- `docs/AWS_MVP_RUNBOOK.md`
+- `.env.example`
+
+Runbook에는 `.env` 준비, PostgreSQL, llama.cpp, FastAPI, 사용자/관리자 Frontend, SSH Tunnel, API 및 브라우저 검증 절차가 정리되어 있다.
