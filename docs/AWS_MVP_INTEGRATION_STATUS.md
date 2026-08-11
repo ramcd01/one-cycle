@@ -331,3 +331,96 @@ FastAPI 최종 검증:
 - triton==3.7.1
 
 `pip check`와 `pip install --dry-run -r requirements.txt` 검증을 통과했다.
+
+---
+
+## 10. 사용자 Frontend E2E 및 공고 메타데이터 검증
+
+사용자 Frontend를 실제 FastAPI 및 서비스 DB 데이터에 연결했다.
+
+검증 흐름:
+
+~~~text
+React / Vite :5173
+→ /api
+→ Vite Proxy
+→ FastAPI :18000
+→ PostgreSQL
+→ pgvector / RAG
+→ llama.cpp
+→ 답변 및 근거
+→ 사용자 화면
+~~~
+
+### 공고 목록
+
+`GET /api/announcements` 응답을 실제 목록 화면에 연결했다.
+
+현재 `announcement_001` 기준:
+
+- region: 충청북도
+- announcementDate: 2026-07-16
+- publicationStatus: fixture
+
+`fixture`는 내부 테스트 적재 상태이므로 사용자 화면에서는
+`상태 미확인`으로 표시한다.
+
+파일명 기반 제목의 `_` 문자는 사용자 화면에서 공백으로 표시한다.
+
+### 공고 상세
+
+`GET /api/announcements/1` 응답의 `keyInformation`을 상세 화면에 연결했다.
+
+현재 연결 항목:
+
+- applicationPeriod
+- supplyInformation
+- eligibility
+- incomeAssetCriteria
+- requiredDocuments
+
+### AI 질의응답
+
+상세 화면의 질문 입력을 `/api/chat`에 연결했다.
+
+`신청 자격은 어떻게 되나요?` 질문을 기준으로 다음을 확인했다.
+
+- AI 답변 생성
+- grounded 응답
+- evidence 반환
+- 근거 문단 버튼
+- 근거 모달
+- 검색 similarity 표시
+
+### Frontend 검증
+
+사용자 Frontend production build가 정상 완료되었다.
+
+~~~bash
+cd frontend/user
+npm run build
+~~~
+
+Vite Proxy를 통한 API 연결도 확인했다.
+
+~~~bash
+curl -I http://127.0.0.1:5173
+curl -sS http://127.0.0.1:5173/api/announcements/1
+~~~
+
+### Fixture 공고 메타데이터 재현
+
+`backend/scripts/load_fixture_structure.py`에 다음 옵션을 추가했다.
+
+- `--region`
+- `--announcement-date`
+- `--publication-status`
+
+따라서 신규 fixture 초기 적재 시 지역과 공고일을 함께 등록할 수 있다.
+
+현재 서비스 DB의 `announcement_001` 검증값:
+
+- region: 충청북도
+- announcement_date: 2026-07-16
+
+현재 서비스 DB와 volume은 초기화하지 않는다.

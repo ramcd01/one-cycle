@@ -488,26 +488,37 @@ evidence
 
 ---
 
-## 15. 현재 이어서 개발할 위치
+## 15. 사용자 Frontend E2E 연결 완료
 
-사용자 Frontend 상세 화면 연결을 우선한다.
+사용자 Frontend의 실제 DB/API 연결을 완료했다.
 
-```text
-frontend/user/src/components/screens/DetailScreen.tsx
-```
+현재 확인된 흐름:
 
-우선순위:
+~~~text
+공고 목록
+→ 공고 상세
+→ 핵심 정보 카드
+→ AI 질문
+→ pgvector 검색
+→ llama.cpp 답변
+→ 근거 문단 확인
+~~~
 
-1. API의 `announcementDate`, `publicationStatus` 필드를 실제 화면에 연결
-2. `keyInformation.applicationPeriod` 연결
-3. `keyInformation.supplyInformation` 연결
-4. `keyInformation.eligibility` 연결
-5. `keyInformation.incomeAssetCriteria` 연결
-6. `keyInformation.requiredDocuments` 연결
-7. 시연용 fallback / 하드코딩 제거
-8. 사용자 페이지 전체 E2E 재검증
+완료 항목:
 
-현재 단계에서는 새로운 검색 구조나 추가 RAG 기능보다 이미 연결된 DB/API 데이터를 Frontend에 정확히 표시하는 작업을 우선한다.
+1. `/api/announcements` 공고 목록 연결
+2. `/api/announcements/{id}` 상세 연결
+3. `keyInformation.applicationPeriod` 연결
+4. `keyInformation.supplyInformation` 연결
+5. `keyInformation.eligibility` 연결
+6. `keyInformation.incomeAssetCriteria` 연결
+7. `keyInformation.requiredDocuments` 연결
+8. `/api/chat` 질의응답 연결
+9. evidence 근거 모달 연결
+10. 사용자 Frontend production build 검증
+
+현재 단계에서는 새로운 검색 기능을 추가하기보다
+검증된 MVP 통합 결과를 유지하고 재현 가능한 상태로 관리한다.
 
 ---
 
