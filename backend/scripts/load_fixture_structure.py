@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import select
@@ -59,6 +59,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--execution-id",
         default="integration_fixture_announcement_001_v1",
+    )
+
+    parser.add_argument(
+        "--region",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--announcement-date",
+        type=date.fromisoformat,
+        default=None,
+        help="YYYY-MM-DD 형식",
+    )
+
+    parser.add_argument(
+        "--publication-status",
+        default="fixture",
     )
 
     return parser.parse_args()
@@ -186,7 +203,9 @@ def main() -> int:
             source_announcement_id=args.announcement_key,
             title=Path(filename).stem,
             detail_url=f"fixture://{args.announcement_key}",
-            publication_status="fixture",
+            region=args.region,
+            announcement_date=args.announcement_date,
+            publication_status=args.publication_status,
         )
 
         session.add(announcement)
